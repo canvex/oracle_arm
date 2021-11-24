@@ -8,26 +8,26 @@ import requests
 import random
 import base64
 # tg pusher config
-USE_TG = False  # 如果启用tg推送 要设置为True
-TG_BOT_TOKEN = ''  # 通过 @BotFather 申请获得，示例：1077xxx4424:AAFjv0FcqxxxxxxgEMGfi22B4yh15R5uw
-TG_USER_ID = ''  # 用户、群组或频道 ID，示例：129xxx206
-TG_API_HOST = 'api.telegram.org'  # 自建 API 反代地址，供网络环境无法访问时使用，网络正常则保持默认
+USE_TG = False  # 如果啟用tg推送 要設置為True
+TG_BOT_TOKEN = ''  # 通過 @BotFather 申請獲得，示例：1077xxx4424:AAFjv0FcqxxxxxxgEMGfi22B4yh15R5uw
+TG_USER_ID = ''  # 使用者、群組或頻道 ID，示例：129xxx206
+TG_API_HOST = 'api.telegram.org'  # 自建 API 反代位址，供網路環境無法訪問時使用，網路正常則保持預設
 
 
 def telegram(desp):
-    data = (('chat_id', TG_USER_ID), ('text', '🐢甲骨文ARM抢注脚本为您播报🐢 \n\n' + desp))
+    data = (('chat_id', TG_USER_ID), ('text', '🐢甲骨文ARM搶注腳本為您播報🐢 \n\n' + desp))
     response = requests.post('https://' + TG_API_HOST + '/bot' + TG_BOT_TOKEN +
                              '/sendMessage',
                              data=data)
     if response.status_code != 200:
-        print('Telegram Bot 推送失败')
+        print('Telegram Bot 推送失敗')
     else:
         print('Telegram Bot 推送成功')
 
 
 class OciUser:
     """
-    oci 用户配置文件的类
+    oci 使用者設定檔的類
     """
     user: str
     fingerprint: str
@@ -36,7 +36,7 @@ class OciUser:
     region: str
 
     def __init__(self, configfile="~/.oci/config", profile="DEFAULT"):
-        # todo 用户可以自定义制定config文件地址，暂时懒得写
+        # todo 用戶可以自訂制定config檔位址，暫時懶得寫
         cfg = oci.config.from_file(file_location=configfile,
                                    profile_name=profile)
         validate_config(cfg)
@@ -66,7 +66,7 @@ class FileParser:
 
     def parser(self, file_path):
         # compoartment id
-        # print("开始解析参数")
+        # print("開始解析參數")
 
         try:
             print("filepath", file_path)
@@ -75,16 +75,16 @@ class FileParser:
             f.close()
 
         except Exception as e:
-            print("main.tf文件打开失败,请再一次确认执行了正确操作,脚本退出", e)
+            print("main.tf檔打開失敗,請再一次確認執行了正確操作,腳本退出", e)
             exit(0)
 
         compoartment_pat = re.compile('compartment_id = "(.*)"')
         self.compoartment_id = compoartment_pat.findall(self._filebuf).pop()
 
-        # 内存
+        # 記憶體
         memory_pat = re.compile('memory_in_gbs = "(.*)"')
         self.memory_in_gbs = float(memory_pat.findall(self._filebuf).pop())
-        # 查找cpu个数
+        # 查找cpu個數
         cpu_pat = re.compile('ocpus = "(.*)"')
         self.ocpus = float(cpu_pat.findall(self._filebuf).pop())
 
@@ -93,10 +93,10 @@ class FileParser:
 
         self.availability_domain = ava_domain_pat.findall(self._filebuf).pop()
 
-        # 子网id
+        # 子網id
         subnet_pat = re.compile('subnet_id = "(.*)"')
         self.subnet_id = subnet_pat.findall(self._filebuf).pop()
-        # 实例名称
+        # 實例名稱
         disname_pat = re.compile('display_name = "(.*)"')
         disname = disname_pat.findall(self._filebuf).pop()
         self.display_name = disname.strip().replace(" ", "-")
@@ -104,7 +104,7 @@ class FileParser:
         # imageid
         imageid_pat = re.compile('source_id = "(.*)"')
         self.image_id = imageid_pat.findall(self._filebuf)[0]
-        # 硬盘大小
+        # 硬碟大小
         oot_volume_size_in_gbs_pat = re.compile(
             'boot_volume_size_in_gbs = "(.*)"')
         try:
@@ -113,13 +113,13 @@ class FileParser:
         except IndexError:
             self.boot_volume_size_in_gbs = 50.0
 
-        # print("硬盘大小", self.boot_volume_size_in_gbs)
-        # 读取密钥
+        # print("硬碟大小", self.boot_volume_size_in_gbs)
+        # 讀取金鑰
         ssh_rsa_pat = re.compile('"ssh_authorized_keys" = "(.*)"')
         try:
             self.ssh_authorized_keys = ssh_rsa_pat.findall(self._filebuf).pop()
         except Exception as e:
-            print("推荐创建堆栈的时候下载ssh key，理论上是可以不用的，但是我没写😂,麻烦重新创建吧")
+            print("推薦創建堆疊的時候下載ssh key，理論上是可以不用的，但是我沒寫😂,麻煩重新創建吧")
 
     @property
     def ssh_authorized_keys(self):
@@ -210,7 +210,7 @@ class InsCreate:
             random.sample(
                 'ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba#@1234567890',
                 13))
-        print("创建ssh登陆密码:{}\n".format(passwd))
+        print("創建ssh登陸密碼:{}\n".format(passwd))
         self._pwd = passwd
         sh = '#!/bin/bash \n    echo root:' + passwd + " | sudo chpasswd root\n    sudo sed -i 's/^.*PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;\n    sudo sed -i 's/^.*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config;\n    sudo reboot"
         sh64 = base64.b64encode(sh.encode('utf-8'))
@@ -218,45 +218,45 @@ class InsCreate:
         self._slcmd = sh64
 
     def create(self):
-        # print("与运行创建活动")
-        # 开启一个tg的原始推送
-        text = "脚本开始启动:\n,区域:{}-实例:{},CPU:{}C-内存:{}G-硬盘:{}G的小🐔已经快马加鞭抢购了\n".format(
+        # print("與運行創建活動")
+        # 開啟一個tg的原始推送
+        text = "腳本開始啟動:\n,區域:{}-實例:{},CPU:{}C-記憶體:{}G-硬碟:{}G的小🐔已經快馬加鞭搶購了\n".format(
             self.tf.availability_domain, self.tf.display_name, self.tf.ocpus,
             self.tf.memory_in_gbs, self.tf.boot_volume_size_in_gbs)
         telegram(text)
         self.gen_pwd()
         while True:
             try:
-                ins = self.lunch_instance()  # 应该返回具体的成功的数据
+                ins = self.lunch_instance()  # 應該返回具體的成功的資料
             except oci.exceptions.ServiceError as e:
                 if e.status == 429 and e.code == 'TooManyRequests' and e.message == 'Too many requests for the user':
-                    # 被限速了，改一下时间
-                    print("请求太快了，自动调整请求时间ing")
+                    # 被限速了，改一下時間
+                    print("請求太快了，自動調整請求時間ing")
                     if self.sleep_time < 60:
                         self.sleep_time += 10
                 elif not (e.status == 500 and e.code == 'InternalError'
                           and e.message == 'Out of host capacity.'):
                     if "Service limit" in e.message and e.status==400:
 
-                        # 可能是别的错误，也有可能是 达到上限了，要去查看一下是否开通成功，也有可能错误了
-                        self.logp("❌如果看到这条推送,说明刷到机器，但是开通失败了，请后台检查你的cpu，内存，硬盘占用情况，并释放对应的资源 返回值:{},\n 脚本停止".format(e))
+                        # 可能是別的錯誤，也有可能是 達到上限了，要去查看一下是否開通成功，也有可能錯誤了
+                        self.logp("❌如果看到這條推送,說明刷到機器，但是開通失敗了，請後臺檢查你的cpu，記憶體，硬碟佔用情況，並釋放對應的資源 返回值:{},\n 腳本停止".format(e))
                     else:
-                        self.logp("❌发生错误,脚本停止!请检查参数或github反馈/查找 相关问题:{}".format(e))
+                        self.logp("❌發生錯誤,腳本停止!請檢查參數或github回饋/查找 相關問題:{}".format(e))
                     telegram(self.desp)
                     raise e
                 else:
-                    # 没有被限速，恢复减少的时间
-                    print("目前没有请求限速,快马加刷中")
+                    # 沒有被限速，恢復減少的時間
+                    print("目前沒有請求限速,快馬加刷中")
                     if self.sleep_time > 15:
                         self.sleep_time -= 10
-                print("本次返回信息:",e)
+                print("本次返回資訊:",e)
                 time.sleep(self.sleep_time)
             else:
-                #  开通成功 ，ins 就是返回的数据
-                #  可以等一会去请求实例的ip
-                # print("开通成功之后的ins:\n\n", ins, type(ins))
+                #  開通成功 ，ins 就是返回的資料
+                #  可以等一會去請求實例的ip
+                # print("開通成功之後的ins:\n\n", ins, type(ins))
                 self.logp(
-                    "🎉经过 {} 尝试后\n 区域:{}实例:{}-CPU:{}C-内存:{}G🐔创建成功了🎉\n".format(
+                    "🎉經過 {} 嘗試後\n 區域:{}實例:{}-CPU:{}C-記憶體:{}G🐔創建成功了🎉\n".format(
                         self.try_count + 1,
                         self.tf.availability_domain,
                         self.tf.display_name,
@@ -264,14 +264,14 @@ class InsCreate:
                         self.tf.memory_in_gbs,
                     ))
                 self.ins_id = ins.id
-                self.logp("ssh登陆密码: {} \n".format(self._pwd))
+                self.logp("ssh登陸密碼: {} \n".format(self._pwd))
                 self.check_public_ip()
 
                 telegram(self.desp)
                 break
             finally:
                 self.try_count += 1
-                print("抢注中，已经经过:{}尝试".format(self.try_count))
+                print("搶注中，已經經過:{}嘗試".format(self.try_count))
 
     def check_public_ip(self):
 
@@ -282,10 +282,10 @@ class InsCreate:
                 instance_id=self.ins_id)
             data = attachments.data
             if len(data) != 0:
-                print("开始查找vnic id ")
+                print("開始查找vnic id ")
                 vnic_id = data[0].vnic_id
                 public_ip = network_client.get_vnic(vnic_id).data.public_ip
-                self.logp("公网ip为:{}\n 🐢脚本停止，感谢使用😄\n".format(public_ip))
+                self.logp("公網ip為:{}\n 🐢腳本停止，感謝使用😄\n".format(public_ip))
                 self.public_ip = public_ip
                 break
             time.sleep(5)
@@ -322,3 +322,4 @@ if __name__ == "__main__":
     path = sys.argv[1]
     ins = InsCreate(user, path)
     ins.create()
+
